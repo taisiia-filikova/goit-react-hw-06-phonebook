@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
+import { useSelector, useDispatch } from 'react-redux';
+import { addContact } from '../../redux/contacts/contacts-actions';
+import { getContacts } from '../../redux/contacts/contacts-selectors';
+import Cleave from 'cleave.js/react';
+import { toast } from 'react-toastify';
+
 import s from './ContactForm.module.css';
 
-function ContactForm({ onSubmit }) {
+function ContactForm() {
+  const dispatch = useDispatch();
+  const contacts = useSelector(getContacts);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
 
@@ -23,13 +30,41 @@ function ContactForm({ onSubmit }) {
     }
   };
 
-  const handleSubmit = evt => {
-    evt.preventDefault();
-    onSubmit(name, number);
-    clearInput();
+  const checkRepeatName = name => {
+    return contacts.find(
+      contact => contact.name.toLowerCase() === name.toLowerCase(),
+    );
   };
 
-  const clearInput = () => {
+  const checkRepeatNumber = number => {
+    return contacts.find(contact => contact.number === number);
+  };
+
+  const checkEmptyQuery = (name, number) => {
+    return name.trim() === '' || number.trim() === '';
+  };
+
+  const checkValidNumber = number => {
+    return !/\d{3}[-]\d{2}[-]\d{2}/g.test(number);
+  };
+
+  const handleSubmit = evt => {
+    evt.preventDefault();
+    if (checkRepeatName(name)) {
+      toast(`${name} is already in contacts.`);
+    } else if (checkRepeatNumber(number)) {
+      toast(`${number} is already in contacts.`);
+    } else if (checkEmptyQuery(name, number)) {
+      toast.info('Enter the name and phone number!');
+    } else if (checkValidNumber(number)) {
+      toast.error('Enter the correct phone number!');
+    } else {
+      dispatch(addContact(name, number));
+    }
+    resetInput();
+  };
+
+  const resetInput = () => {
     setName('');
     setNumber('');
   };
@@ -49,12 +84,13 @@ function ContactForm({ onSubmit }) {
       </label>
       <label className={s.label}>
         Number
-        <input
-          className={s.input}
+        <Cleave
+          options={{ delimiter: '-', blocks: [3, 2, 2] }}
           type="tel"
           name="number"
           value={number}
           onChange={handleChange}
+          className={s.input}
           placeholder="555-55-55"
         />
       </label>
@@ -64,9 +100,5 @@ function ContactForm({ onSubmit }) {
     </form>
   );
 }
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
 
 export default ContactForm;

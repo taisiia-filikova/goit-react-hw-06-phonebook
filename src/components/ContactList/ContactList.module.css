@@ -12,6 +12,13 @@
   color: var(--textColor);
 }
 
+.data {
+  display: flex;
+  justify-content: space-evenly;
+  text-align: left;
+  width: 100%;
+}
+
 .button {
   margin-left: 20px;
 
